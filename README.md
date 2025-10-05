@@ -52,6 +52,7 @@ Interface do usuário organizada em componentes reutilizáveis:
 - AVFoundation para áudio
 - Combine para gerenciamento de estado
 - Timer para sincronização
+- FileManager para cache persistente de áudio
 
 ## Estrutura de Código
 
@@ -92,6 +93,29 @@ EasyMetronome/
 - iOS 17.0+
 - Xcode 15.0+
 - Swift 5.9+
+- SwiftLint (opcional, para desenvolvimento)
+
+## Desenvolvimento
+
+### SwiftLint
+O projeto usa SwiftLint para manter a qualidade do código.
+
+**Instalar:**
+```bash
+brew install swiftlint
+```
+
+**Rodar linter:**
+```bash
+./lint.sh
+# ou
+swiftlint lint EasyMetronome
+```
+
+**Corrigir automaticamente:**
+```bash
+swiftlint --fix EasyMetronome
+```
 
 ## Licença
 

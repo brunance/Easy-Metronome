@@ -14,6 +14,7 @@ struct MetronomeView: View {
     @State private var beatFlash = false
     @State private var animationTimer: Timer?
     @State private var currentTheme: AppTheme = .light
+    @State private var showTimeSignaturePicker = false
 
     private var theme: ThemeColors {
         currentTheme.colors
@@ -74,19 +75,8 @@ private extension MetronomeView {
     }
 
     var timeSignatureSelector: some View {
-        Menu {
-            ForEach(TimeSignature.allSignatures) { signature in
-                Button(action: {
-                    metronome.setTimeSignature(signature)
-                }) {
-                    HStack {
-                        Text(signature.description)
-                        if signature == metronome.timeSignature {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
+        Button {
+            showTimeSignaturePicker = true
         } label: {
             HStack(spacing: 8) {
                 Text(metronome.timeSignature.description)
@@ -102,27 +92,43 @@ private extension MetronomeView {
                     .fill(theme.buttonFill.opacity(0.8))
             )
         }
+        .buttonStyle(.plain)
+        .confirmationDialog("Selecione o Compasso", isPresented: $showTimeSignaturePicker, titleVisibility: .visible) {
+            ForEach(TimeSignature.allSignatures) { signature in
+                Button(signature.description + " - " + signature.name) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        metronome.setTimeSignature(signature)
+                    }
+                }
+            }
+            Button("Cancelar", role: .cancel) {}
+        }
     }
 
     var beatIndicator: some View {
         HStack(spacing: 8) {
             ForEach(0..<metronome.timeSignature.beats, id: \.self) { beat in
-                Circle()
-                    .fill(beat == metronome.currentBeat && metronome.isPlaying
-                          ? theme.circleStroke
-                          : theme.circleStroke.opacity(0.3))
-                    .frame(width: 12, height: 12)
-                    .overlay(
-                        Circle()
-                            .stroke(theme.circleStroke.opacity(0.5), lineWidth: 1)
-                    )
+                beatDot(for: beat)
             }
         }
         .padding(.vertical, 8)
+        .animation(.easeInOut(duration: 0.15), value: metronome.currentBeat)
+    }
+
+    func beatDot(for beat: Int) -> some View {
+        let isActive = beat == metronome.currentBeat && metronome.isPlaying
+
+        return Circle()
+            .fill(isActive ? theme.circleStroke : theme.circleStroke.opacity(0.3))
+            .frame(width: 12, height: 12)
+            .overlay(
+                Circle()
+                    .stroke(theme.circleStroke.opacity(0.5), lineWidth: 1)
+            )
     }
 
     var themeButton: some View {
-        Button(action: {
+        Button {
             withAnimation(.easeInOut(duration: 0.3)) {
                 let allThemes = AppTheme.allCases
                 if let currentIndex = allThemes.firstIndex(of: currentTheme) {
@@ -130,7 +136,7 @@ private extension MetronomeView {
                     currentTheme = allThemes[nextIndex]
                 }
             }
-        }) {
+        } label: {
             Image(systemName: "circle.lefthalf.filled")
                 .font(.system(size: 24, weight: .regular))
                 .foregroundColor(theme.buttonIcon)
@@ -164,12 +170,14 @@ private extension MetronomeView {
                 Text("\(metronome.bpm)")
                     .font(.system(size: 80, weight: .bold, design: .rounded))
                     .foregroundColor(theme.text)
+                    .contentTransition(.numericText())
 
                 Text("BPM")
                     .font(.system(size: 24, weight: .light, design: .rounded))
                     .foregroundColor(theme.text.opacity(0.7))
             }
         }
+        .drawingGroup() // Otimização de renderização
     }
 
     var primaryControls: some View {
@@ -213,12 +221,12 @@ private extension MetronomeView {
     }
 
     var playPauseButton: some View {
-        Button(action: {
+        Button {
             metronome.togglePlayback()
             if metronome.isPlaying {
                 triggerPulse()
             }
-        }) {
+        } label: {
             ZStack {
                 Circle()
                     .fill(theme.buttonFill)

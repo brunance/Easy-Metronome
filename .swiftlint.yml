@@ -1,0 +1,69 @@
+# SwiftLint Configuration for EasyMetronome
+
+# Regras desabilitadas
+disabled_rules:
+  - todo # Permite TODOs no código
+  - force_cast # Permite force cast quando necessário
+  - force_try # Permite force try quando necessário
+
+# Regras opcionais habilitadas
+opt_in_rules:
+  - empty_count # Prefere isEmpty ao invés de count == 0
+  - empty_string # Prefere isEmpty ao invés de == ""
+  - explicit_init # Evita .init() desnecessário
+  - first_where # Prefere .first(where:) ao invés de .filter().first
+  - sorted_first_last # Prefere .min() ou .max() ao invés de .sorted().first
+  - contains_over_filter_count # Prefere contains ao invés de filter().count > 0
+  - contains_over_filter_is_empty # Prefere contains ao invés de !filter().isEmpty
+  - last_where # Prefere .last(where:) ao invés de .filter().last
+  - reduce_into # Prefere reduce(into:) para performance
+  - redundant_nil_coalescing # Remove ?? nil desnecessário
+  - toggle_bool # Prefere toggle() ao invés de = !
+  - unused_import # Remove imports não utilizados
+
+# Configurações de linha
+line_length:
+  warning: 120
+  error: 150
+  ignores_comments: true
+  ignores_urls: true
+
+# Configurações de arquivo
+file_length:
+  warning: 400
+  error: 500
+
+# Configurações de função
+function_body_length:
+  warning: 40
+  error: 60
+
+# Configurações de tipo
+type_body_length:
+  warning: 300
+  error: 400
+
+# Configurações de nome
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 40
+    error: 50
+  excluded:
+    - id
+    - i
+    - x
+    - y
+    - z
+
+# Diretórios excluídos
+excluded:
+  - Pods
+  - .build
+  - DerivedData
+  - .swiftpm
+
+# Reporter (formato de saída)
+reporter: "xcode"

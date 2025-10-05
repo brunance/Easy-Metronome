@@ -75,37 +75,70 @@ class MetronomeEngine: ObservableObject {
         audioPlayerAccent = createAudioPlayer(frequency: 1200.0, fileName: "metronome_accent.wav")
     }
 
-    private func createAudioPlayer(frequency: Double, fileName: String) -> AVAudioPlayer? {
-        let sampleRate = 44100.0
-        let duration = 0.05
-
-        let frameCount = Int(sampleRate * duration)
-        var audioData = [Int16]()
-
-        for integer in 0..<frameCount {
-            let time = Double(integer) / sampleRate
-            let amplitude = exp(-time * 50) // Envelope de decaimento
-            let twoPi = 2.0 * Double.pi
-            let phase = twoPi * frequency * time
-            let sineWave = sin(phase)
-            let sample = Int16(amplitude * sineWave * Double(Int16.max))
-            audioData.append(sample)
+    private func getCacheDirectory() -> URL? {
+        guard let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
         }
 
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        // Cria subdiretório para os sons do metrônomo
+        let metronomeCache = cacheDir.appendingPathComponent("MetronomeSounds", isDirectory: true)
 
+        // Cria o diretório se não existir
+        if !FileManager.default.fileExists(atPath: metronomeCache.path) {
+            try? FileManager.default.createDirectory(at: metronomeCache, withIntermediateDirectories: true)
+        }
+
+        return metronomeCache
+    }
+
+    private func createAudioPlayer(frequency: Double, fileName: String) -> AVAudioPlayer? {
+        guard let cacheDir = getCacheDirectory() else {
+            print("Erro ao acessar diretório de cache")
+            return nil
+        }
+
+        let fileURL = cacheDir.appendingPathComponent(fileName)
+
+        // Verifica se o arquivo já existe no cache
+        if !FileManager.default.fileExists(atPath: fileURL.path) {
+            // Gera o som apenas se não existir
+            let sampleRate = 44100.0
+            let duration = 0.05
+
+            let frameCount = Int(sampleRate * duration)
+            var audioData = [Int16]()
+
+            for integer in 0..<frameCount {
+                let time = Double(integer) / sampleRate
+                let amplitude = exp(-time * 50) // Envelope de decaimento
+                let twoPi = 2.0 * Double.pi
+                let phase = twoPi * frequency * time
+                let sineWave = sin(phase)
+                let sample = Int16(amplitude * sineWave * Double(Int16.max))
+                audioData.append(sample)
+            }
+
+            do {
+                let wavData = createWAVData(from: audioData, sampleRate: Int(sampleRate))
+                try wavData.write(to: fileURL)
+                print("✅ Som criado e salvo em cache: \(fileName)")
+            } catch {
+                print("Erro ao salvar som no cache: \(error)")
+                return nil
+            }
+        } else {
+            print("♻️ Som carregado do cache: \(fileName)")
+        }
+
+        // Carrega o player do arquivo em cache
         do {
-            try? FileManager.default.removeItem(at: tempURL)
-            let wavData = createWAVData(from: audioData, sampleRate: Int(sampleRate))
-            try wavData.write(to: tempURL)
-
-            let player = try AVAudioPlayer(contentsOf: tempURL)
+            let player = try AVAudioPlayer(contentsOf: fileURL)
             player.volume = 1.0
             player.numberOfLoops = 0
             player.prepareToPlay()
             return player
         } catch {
-            print("Erro ao criar som \(fileName): \(error)")
+            print("Erro ao criar audio player: \(error)")
             return nil
         }
     }
@@ -171,11 +204,48 @@ class MetronomeEngine: ObservableObject {
 
     // MARK: - Time Signature Control
     func setTimeSignature(_ signature: TimeSignature) {
+        // Evita processamento desnecessário se for o mesmo compasso
+        guard signature != timeSignature else { return }
+
         timeSignature = signature
         currentBeat = 0
+
+        // Apenas reagenda se estiver tocando
         if isPlaying {
-            rescheduleTimer()
+            DispatchQueue.main.async { [weak self] in
+                self?.rescheduleTimer()
+            }
         }
+    }
+
+    // MARK: - Cache Management
+    /// Limpa os arquivos de áudio do cache (útil para debug ou se quiser regenerar os sons)
+    func clearAudioCache() {
+        guard let cacheDir = getCacheDirectory() else { return }
+
+        do {
+            try FileManager.default.removeItem(at: cacheDir)
+            print("🗑️ Cache de áudio limpo")
+        } catch {
+            print("Erro ao limpar cache: \(error)")
+        }
+    }
+
+    /// Retorna o tamanho do cache em bytes
+    func getCacheSize() -> Int64 {
+        guard let cacheDir = getCacheDirectory() else { return 0 }
+
+        var totalSize: Int64 = 0
+
+        if let enumerator = FileManager.default.enumerator(at: cacheDir, includingPropertiesForKeys: [.fileSizeKey]) {
+            for case let fileURL as URL in enumerator {
+                if let fileSize = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize {
+                    totalSize += Int64(fileSize)
+                }
+            }
+        }
+
+        return totalSize
     }
 
     // MARK: - BPM Control
