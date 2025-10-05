@@ -21,33 +21,42 @@ struct MetronomeView: View {
     }
 
     var body: some View {
-        ZStack {
-            theme.background
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            let availableHeight = geometry.size.height
+                - geometry.safeAreaInsets.top
+                - geometry.safeAreaInsets.bottom
+                - 60  // header height estimate
+                - 44  // time signature selector
+                - 24  // beat indicator
+                - 90  // primary controls
+                - 44  // secondary controls
+                - 100 // paddings total
 
-            VStack(spacing: 40) {
-                Spacer()
+            ZStack {
+                theme.background
+                    .ignoresSafeArea()
 
-                titleView
-                timeSignatureSelector
-                bpmIndicator
-                beatIndicator
-                primaryControls
-                secondaryControls
-                bpmRangeLabel
+                VStack(spacing: 0) {
+                    headerView
+                        .padding(.top, geometry.safeAreaInsets.top + 10)
+                        .padding(.bottom, 15)
 
-                Spacer()
-            }
+                    timeSignatureSelector
+                        .padding(.bottom, 15)
 
-            // Botão de tema no canto superior direito
-            VStack {
-                HStack {
-                    Spacer()
-                    themeButton
-                        .padding(.top, 50)
-                        .padding(.trailing, 20)
+                    bpmIndicator(availableHeight: availableHeight, screenSize: geometry.size)
+                        .padding(.bottom, 15)
+
+                    beatIndicator
+                        .padding(.bottom, 15)
+
+                    primaryControls
+                        .padding(.bottom, 15)
+
+                    secondaryControls
+                        .padding(.bottom, geometry.safeAreaInsets.bottom + 20)
                 }
-                Spacer()
+                .padding(.horizontal, 20)
             }
         }
         .onChange(of: metronome.isPlaying) {
@@ -68,10 +77,21 @@ struct MetronomeView: View {
 // MARK: - View Components
 private extension MetronomeView {
 
-    var titleView: some View {
-        Text("EasyMetronome")
-            .font(.system(size: 32, weight: .light, design: .rounded))
-            .foregroundColor(theme.title)
+    var headerView: some View {
+        ZStack {
+            // Título centralizado
+            Text("EasyMetronome")
+                .font(.system(size: 28, weight: .light, design: .rounded))
+                .foregroundColor(theme.title)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+
+            // Botão de tema à direita
+            HStack {
+                Spacer()
+                themeButton
+            }
+        }
     }
 
     var timeSignatureSelector: some View {
@@ -148,12 +168,19 @@ private extension MetronomeView {
         }
     }
 
-    var bpmIndicator: some View {
-        ZStack {
+    func bpmIndicator(availableHeight: CGFloat, screenSize: CGSize) -> some View {
+        // Usa a altura disponível ou largura, o que for menor
+        let maxSize = min(availableHeight, screenSize.width - 40)
+        let circleSize = max(maxSize * 0.85, 180) // Mínimo de 180pt
+        let fontSize = circleSize * 0.28
+        let bpmLabelSize = circleSize * 0.085
+        let rangeLabelSize = circleSize * 0.042
+
+        return ZStack {
             // Círculo de fundo
             Circle()
                 .fill(theme.circleFill)
-                .frame(width: 280, height: 280)
+                .frame(width: circleSize, height: circleSize)
 
             // Círculo interno com animação de flash
             Circle()
@@ -163,21 +190,26 @@ private extension MetronomeView {
                         : theme.circleStroke.opacity(0.3),
                     lineWidth: 2
                 )
-                .frame(width: 260, height: 260)
+                .frame(width: circleSize * 0.93, height: circleSize * 0.93)
                 .animation(.easeOut(duration: 0.1), value: beatFlash)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 4) {
                 Text("\(metronome.bpm)")
-                    .font(.system(size: 80, weight: .bold, design: .rounded))
+                    .font(.system(size: fontSize, weight: .bold, design: .rounded))
                     .foregroundColor(theme.text)
                     .contentTransition(.numericText())
 
                 Text("BPM")
-                    .font(.system(size: 24, weight: .light, design: .rounded))
+                    .font(.system(size: bpmLabelSize, weight: .light, design: .rounded))
                     .foregroundColor(theme.text.opacity(0.7))
+
+                Text("\(metronome.minBPM) - \(metronome.maxBPM) BPM")
+                    .font(.system(size: rangeLabelSize, weight: .regular, design: .rounded))
+                    .foregroundColor(theme.label.opacity(0.5))
+                    .padding(.top, 4)
             }
         }
-        .drawingGroup() // Otimização de renderização
+        .drawingGroup()
     }
 
     var primaryControls: some View {
@@ -212,12 +244,6 @@ private extension MetronomeView {
                 isDisabled: metronome.bpm >= metronome.maxBPM
             )
         }
-    }
-
-    var bpmRangeLabel: some View {
-        Text("\(metronome.minBPM) - \(metronome.maxBPM) BPM")
-            .font(.system(size: 14, weight: .regular, design: .rounded))
-            .foregroundColor(theme.label.opacity(0.6))
     }
 
     var playPauseButton: some View {
