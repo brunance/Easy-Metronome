@@ -28,7 +28,9 @@ struct MetronomeView: View {
                 Spacer()
                 
                 titleView
+                timeSignatureSelector
                 bpmIndicator
+                beatIndicator
                 primaryControls
                 secondaryControls
                 bpmRangeLabel
@@ -69,6 +71,54 @@ private extension MetronomeView {
         Text("EasyMetronome")
             .font(.system(size: 32, weight: .light, design: .rounded))
             .foregroundColor(theme.title)
+    }
+    
+    var timeSignatureSelector: some View {
+        Menu {
+            ForEach(TimeSignature.allSignatures) { signature in
+                Button(action: {
+                    metronome.setTimeSignature(signature)
+                }) {
+                    HStack {
+                        Text(signature.description)
+                        if signature == metronome.timeSignature {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Text(metronome.timeSignature.description)
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundColor(theme.buttonIcon)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(theme.buttonFill.opacity(0.8))
+            )
+        }
+    }
+    
+    var beatIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<metronome.timeSignature.beats, id: \.self) { beat in
+                Circle()
+                    .fill(beat == metronome.currentBeat && metronome.isPlaying
+                          ? theme.circleStroke
+                          : theme.circleStroke.opacity(0.3))
+                    .frame(width: 12, height: 12)
+                    .overlay(
+                        Circle()
+                            .stroke(theme.circleStroke.opacity(0.5), lineWidth: 1)
+                    )
+            }
+        }
+        .padding(.vertical, 8)
     }
     
     var themeButton: some View {

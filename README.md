@@ -9,6 +9,10 @@ Um aplicativo de metrônomo simples e elegante para iOS, desenvolvido em SwiftUI
 - ⚡ Controles rápidos: +1, -1, +10, -10 BPM
 - 🎨 Animação visual sincronizada com o ritmo
 - 🔊 Som de clique sintetizado de alta qualidade
+- 🎵 Suporte para diferentes compassos (4/4, 3/4, 2/4, 6/8, 5/4, 7/8)
+- 🎨 Sistema de temas (Rosa, Claro, Escuro)
+- 📊 Indicador visual de tempos
+- 🔔 Acentuação no primeiro tempo
 - 📱 Suporte para iOS
 
 ## Arquitetura
@@ -34,10 +38,13 @@ Interface do usuário organizada em componentes reutilizáveis:
 ## Uso
 
 1. Abra o app
-2. Use os botões **+** e **-** para ajustar o BPM em 1 unidade
-3. Use os botões **+10** e **-10** para ajustes rápidos
-4. Pressione o botão central para iniciar/pausar o metrônomo
-5. O círculo pulsará no ritmo do BPM selecionado
+2. **Selecione o compasso** tocando no botão com a fórmula de compasso (ex: 4/4)
+3. Use os botões **+** e **-** para ajustar o BPM em 1 unidade
+4. Use os botões **+10** e **-10** para ajustes rápidos
+5. Pressione o botão central para **iniciar/pausar** o metrônomo
+6. Observe os **indicadores de tempo** que mostram qual tempo está tocando
+7. O **primeiro tempo** de cada compasso tem um som mais agudo (acentuado)
+8. Toque no botão **🌓** no canto superior direito para alternar entre temas
 
 ## Tecnologias
 
@@ -51,19 +58,34 @@ Interface do usuário organizada em componentes reutilizáveis:
 ```
 EasyMetronome/
 ├── EasyMetronomeApp.swift    # Entry point do app
-├── ContentView.swift          # Interface do usuário
+├── MetronomeView.swift        # Interface do usuário
 ├── MetronomeEngine.swift      # Lógica do metrônomo
-└── Assets.xcassets/          # Recursos visuais
+├── Models/
+│   └── TimeSignature.swift   # Definição de compassos
+├── Theme/
+│   └── ColorTheme.swift      # Sistema de temas
+└── Assets.xcassets/          # Recursos visuais e paletas de cores
 ```
+
+## Compassos Disponíveis
+
+- **4/4** (Comum) - Compasso mais usado em música popular
+- **3/4** (Valsa) - Compasso de valsa
+- **2/4** (Marcha) - Compasso de marcha
+- **6/8** (Composto) - Compasso composto
+- **5/4** - Compasso irregular de 5 tempos
+- **7/8** - Compasso irregular de 7 tempos
 
 ## Melhorias Futuras
 
-- [ ] Suporte para diferentes compassos (4/4, 3/4, etc.)
+- [x] Suporte para diferentes compassos (4/4, 3/4, etc.)
+- [x] Modo escuro/claro
 - [ ] Sons de clique personalizáveis
 - [ ] Presets de BPM para diferentes estilos musicais
-- [ ] Modo escuro/claro
 - [ ] Histórico de BPMs usados
 - [ ] Tap tempo para definir BPM
+- [ ] Subdivisões (semicolcheias, tercinas)
+- [ ] Padrões de acentuação personalizados
 
 ## Requisitos
 

@@ -37,6 +37,8 @@ class MetronomeEngine: ObservableObject {
     // MARK: - Published Properties
     @Published var bpm: Int = 120
     @Published var isPlaying: Bool = false
+    @Published var timeSignature: TimeSignature = .common
+    @Published var currentBeat: Int = 0
     
     // MARK: - Constants
     let minBPM = 40
@@ -45,7 +47,8 @@ class MetronomeEngine: ObservableObject {
     
     // MARK: - Private Properties
     private var timer: Timer?
-    private var audioPlayer: AVAudioPlayer?
+    private var audioPlayerNormal: AVAudioPlayer?
+    private var audioPlayerAccent: AVAudioPlayer?
     
     // MARK: - Initialization
     init() {
@@ -65,14 +68,18 @@ class MetronomeEngine: ObservableObject {
     }
     
     private func setupAudio() {
-        // Gera um som de clique sintetizado
+        // Cria som normal (clique regular)
+        audioPlayerNormal = createAudioPlayer(frequency: 1000.0, fileName: "metronome_click.wav")
+        
+        // Cria som acentuado (primeiro tempo)
+        audioPlayerAccent = createAudioPlayer(frequency: 1200.0, fileName: "metronome_accent.wav")
+    }
+    
+    private func createAudioPlayer(frequency: Double, fileName: String) -> AVAudioPlayer? {
         let sampleRate = 44100.0
         let duration = 0.05
-        let frequency = 1000.0
         
         let frameCount = Int(sampleRate * duration)
-        
-        // Cria dados de áudio em formato PCM 16-bit
         var audioData = [Int16]()
         
         for i in 0..<frameCount {
@@ -85,24 +92,21 @@ class MetronomeEngine: ObservableObject {
             audioData.append(sample)
         }
         
-        // Salva em arquivo WAV temporário
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("metronome_click.wav")
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         do {
-            // Remove arquivo anterior se existir
             try? FileManager.default.removeItem(at: tempURL)
-            
-            // Cria arquivo WAV manualmente
             let wavData = createWAVData(from: audioData, sampleRate: Int(sampleRate))
             try wavData.write(to: tempURL)
             
-            audioPlayer = try AVAudioPlayer(contentsOf: tempURL)
-            audioPlayer?.volume = 1.0
-            audioPlayer?.numberOfLoops = 0
-            audioPlayer?.prepareToPlay()
-            print("Áudio configurado com sucesso em: \(tempURL)")
+            let player = try AVAudioPlayer(contentsOf: tempURL)
+            player.volume = 1.0
+            player.numberOfLoops = 0
+            player.prepareToPlay()
+            return player
         } catch {
-            print("Erro ao criar som: \(error)")
+            print("Erro ao criar som \(fileName): \(error)")
+            return nil
         }
     }
     
@@ -145,12 +149,14 @@ class MetronomeEngine: ObservableObject {
     func start() {
         guard !isPlaying else { return }
         isPlaying = true
+        currentBeat = 0
         playClick()
         scheduleTimer()
     }
     
     func stop() {
         isPlaying = false
+        currentBeat = 0
         timer?.invalidate()
         timer = nil
     }
@@ -160,6 +166,15 @@ class MetronomeEngine: ObservableObject {
             stop()
         } else {
             start()
+        }
+    }
+    
+    // MARK: - Time Signature Control
+    func setTimeSignature(_ signature: TimeSignature) {
+        timeSignature = signature
+        currentBeat = 0
+        if isPlaying {
+            rescheduleTimer()
         }
     }
     
@@ -199,14 +214,22 @@ class MetronomeEngine: ObservableObject {
     
     // MARK: - Audio Playback
     private func playClick() {
-        guard let player = audioPlayer else {
+        // Determina se é o primeiro tempo (acentuado) ou não
+        let isAccent = currentBeat == 0
+        let player = isAccent ? audioPlayerAccent : audioPlayerNormal
+        
+        guard let player = player else {
             print("Audio player não está disponível")
             return
         }
+        
         player.currentTime = 0
         let success = player.play()
         if !success {
             print("Falha ao tocar o som")
         }
+        
+        // Avança para o próximo tempo
+        currentBeat = (currentBeat + 1) % timeSignature.beats
     }
 }
