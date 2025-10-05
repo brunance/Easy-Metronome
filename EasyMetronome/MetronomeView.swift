@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  MetronomeView.swift
 //  EasyMetronome
 //
 //  Created by Bruno França do Prado on 04/10/25.
@@ -8,13 +8,21 @@
 import SwiftUI
 
 // MARK: - ContentView
-struct ContentView: View {
+struct MetronomeView: View {
     @StateObject private var metronome = MetronomeEngine()
     @State private var pulseAnimation = false
+    @State private var beatFlash = false
+    @State private var animationTimer: Timer?
+    @State private var currentTheme: AppTheme = .light
+    
+    private var theme: ThemeColors {
+        currentTheme.colors
+    }
     
     var body: some View {
         ZStack {
-            backgroundGradient
+            theme.background
+                .ignoresSafeArea()
             
             VStack(spacing: 40) {
                 Spacer()
@@ -27,75 +35,89 @@ struct ContentView: View {
                 
                 Spacer()
             }
+            
+            // Botão de tema no canto superior direito
+            VStack {
+                HStack {
+                    Spacer()
+                    themeButton
+                        .padding(.top, 50)
+                        .padding(.trailing, 20)
+                }
+                Spacer()
+            }
         }
         .onChange(of: metronome.isPlaying) { oldValue, newValue in
             if newValue {
                 startPulseAnimation()
+            } else {
+                stopPulseAnimation()
+            }
+        }
+        .onChange(of: metronome.bpm) { oldValue, newValue in
+            if metronome.isPlaying {
+                restartPulseAnimation()
             }
         }
     }
 }
 
 // MARK: - View Components
-private extension ContentView {
-    
-    var backgroundGradient: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color(red: 0.1, green: 0.1, blue: 0.2),
-                Color(red: 0.05, green: 0.05, blue: 0.15)
-            ]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
+private extension MetronomeView {
+
+    var titleView: some View {
+        Text("EasyMetronome")
+            .font(.system(size: 32, weight: .light, design: .rounded))
+            .foregroundColor(theme.title)
     }
     
-    var titleView: some View {
-        Text("Metrônomo")
-            .font(.system(size: 32, weight: .light, design: .rounded))
-            .foregroundColor(.white.opacity(0.9))
+    var themeButton: some View {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                let allThemes = AppTheme.allCases
+                if let currentIndex = allThemes.firstIndex(of: currentTheme) {
+                    let nextIndex = (currentIndex + 1) % allThemes.count
+                    currentTheme = allThemes[nextIndex]
+                }
+            }
+        }) {
+            Image(systemName: "circle.lefthalf.filled")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundColor(theme.buttonIcon)
+                .padding(12)
+                .background(
+                    Circle()
+                        .fill(theme.buttonFill.opacity(0.8))
+                )
+        }
     }
     
     var bpmIndicator: some View {
         ZStack {
-            // Círculo de fundo com animação de pulso
+            // Círculo de fundo
             Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color.blue.opacity(0.3),
-                            Color.purple.opacity(0.2)
-                        ]),
-                        center: .center,
-                        startRadius: 50,
-                        endRadius: 150
-                    )
-                )
+                .fill(theme.circleFill)
                 .frame(width: 280, height: 280)
-                .scaleEffect(metronome.isPlaying && pulseAnimation ? 1.05 : 1.0)
-                .animation(.easeInOut(duration: 60.0 / Double(metronome.bpm)), value: pulseAnimation)
             
-            // Círculo interno
+            // Círculo interno com animação de flash
             Circle()
                 .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.blue, Color.purple]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 3
+                    beatFlash && metronome.isPlaying 
+                        ? theme.circleStroke
+                        : theme.circleStroke.opacity(0.3),
+                    lineWidth: 2
                 )
                 .frame(width: 260, height: 260)
+                .animation(.easeOut(duration: 0.1), value: beatFlash)
             
             VStack(spacing: 8) {
                 Text("\(metronome.bpm)")
                     .font(.system(size: 80, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.text)
                 
                 Text("BPM")
                     .font(.system(size: 24, weight: .light, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(theme.text.opacity(0.7))
             }
         }
     }
@@ -137,7 +159,7 @@ private extension ContentView {
     var bpmRangeLabel: some View {
         Text("\(metronome.minBPM) - \(metronome.maxBPM) BPM")
             .font(.system(size: 14, weight: .regular, design: .rounded))
-            .foregroundColor(.white.opacity(0.5))
+            .foregroundColor(theme.label.opacity(0.6))
     }
     
     var playPauseButton: some View {
@@ -149,20 +171,13 @@ private extension ContentView {
         }) {
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue, Color.purple]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(theme.buttonFill)
                     .frame(width: 90, height: 90)
-                    .shadow(color: metronome.isPlaying ? Color.blue.opacity(0.6) : Color.clear, radius: 20)
                 
                 Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 35, weight: .semibold))
-                    .foregroundColor(.white)
-                    .offset(x: metronome.isPlaying ? 0 : 3)
+                    .foregroundColor(theme.buttonIcon)
+                    .contentTransition(.symbolEffect)
             }
         }
     }
@@ -171,12 +186,12 @@ private extension ContentView {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.1))
+                    .fill(theme.buttonFill)
                     .frame(width: 70, height: 70)
                 
                 Image(systemName: icon)
                     .font(.system(size: 30, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.buttonIcon)
             }
         }
         .disabled(isDisabled)
@@ -187,11 +202,11 @@ private extension ContentView {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(theme.buttonIcon)
                 .frame(width: 80, height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 22)
-                        .fill(Color.white.opacity(0.1))
+                        .fill(theme.buttonFill)
                 )
         }
         .disabled(isDisabled)
@@ -200,22 +215,37 @@ private extension ContentView {
 }
 
 // MARK: - Animation Helpers
-private extension ContentView {
+private extension MetronomeView {
     func triggerPulse() {
         pulseAnimation.toggle()
+        triggerBeatFlash()
+    }
+    
+    func triggerBeatFlash() {
+        beatFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            beatFlash = false
+        }
     }
     
     func startPulseAnimation() {
-        Timer.scheduledTimer(withTimeInterval: 60.0 / Double(metronome.bpm), repeats: true) { timer in
-            if metronome.isPlaying {
-                triggerPulse()
-            } else {
-                timer.invalidate()
-            }
+        let interval = 60.0 / Double(metronome.bpm)
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            triggerPulse()
         }
+    }
+    
+    func stopPulseAnimation() {
+        animationTimer?.invalidate()
+        animationTimer = nil
+    }
+    
+    func restartPulseAnimation() {
+        stopPulseAnimation()
+        startPulseAnimation()
     }
 }
 
 #Preview {
-    ContentView()
+    MetronomeView()
 }

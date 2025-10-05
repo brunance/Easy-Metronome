@@ -55,7 +55,6 @@ class MetronomeEngine: ObservableObject {
     
     // MARK: - Audio Setup
     private func setupAudioSession() {
-        #if os(iOS)
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.playback, mode: .default)
@@ -63,7 +62,6 @@ class MetronomeEngine: ObservableObject {
         } catch {
             print("Erro ao configurar sessão de áudio: \(error)")
         }
-        #endif
     }
     
     private func setupAudio() {
