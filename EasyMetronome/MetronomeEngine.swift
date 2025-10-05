@@ -31,7 +31,7 @@ extension Int16 {
 }
 
 // MARK: - MetronomeEngine
-/// Gerencia o metrônomo: BPM, timer e reprodução de áudio
+/// Manages the metronome: BPM, timer and audio playback
 class MetronomeEngine: ObservableObject {
 
     // MARK: - Published Properties
@@ -63,15 +63,15 @@ class MetronomeEngine: ObservableObject {
             try audioSession.setCategory(.playback, mode: .default)
             try audioSession.setActive(true)
         } catch {
-            print("Erro ao configurar sessão de áudio: \(error)")
+            print("Error configuring audio session: \(error)")
         }
     }
 
     private func setupAudio() {
-        // Cria som normal (clique regular)
+        // Create normal sound (regular click)
         audioPlayerNormal = createAudioPlayer(frequency: 1000.0, fileName: "metronome_click.wav")
 
-        // Cria som acentuado (primeiro tempo)
+        // Create accented sound (first beat)
         audioPlayerAccent = createAudioPlayer(frequency: 1200.0, fileName: "metronome_accent.wav")
     }
 
@@ -80,10 +80,10 @@ class MetronomeEngine: ObservableObject {
             return nil
         }
 
-        // Cria subdiretório para os sons do metrônomo
+        // Create subdirectory for metronome sounds
         let metronomeCache = cacheDir.appendingPathComponent("MetronomeSounds", isDirectory: true)
 
-        // Cria o diretório se não existir
+        // Create directory if it doesn't exist
         if !FileManager.default.fileExists(atPath: metronomeCache.path) {
             try? FileManager.default.createDirectory(at: metronomeCache, withIntermediateDirectories: true)
         }
@@ -93,15 +93,15 @@ class MetronomeEngine: ObservableObject {
 
     private func createAudioPlayer(frequency: Double, fileName: String) -> AVAudioPlayer? {
         guard let cacheDir = getCacheDirectory() else {
-            print("Erro ao acessar diretório de cache")
+            print("Error accessing cache directory")
             return nil
         }
 
         let fileURL = cacheDir.appendingPathComponent(fileName)
 
-        // Verifica se o arquivo já existe no cache
+        // Check if file already exists in cache
         if !FileManager.default.fileExists(atPath: fileURL.path) {
-            // Gera o som apenas se não existir
+            // Generate sound only if it doesn't exist
             let sampleRate = 44100.0
             let duration = 0.05
 
@@ -110,7 +110,7 @@ class MetronomeEngine: ObservableObject {
 
             for integer in 0..<frameCount {
                 let time = Double(integer) / sampleRate
-                let amplitude = exp(-time * 50) // Envelope de decaimento
+                let amplitude = exp(-time * 50) // Decay envelope
                 let twoPi = 2.0 * Double.pi
                 let phase = twoPi * frequency * time
                 let sineWave = sin(phase)
@@ -121,16 +121,16 @@ class MetronomeEngine: ObservableObject {
             do {
                 let wavData = createWAVData(from: audioData, sampleRate: Int(sampleRate))
                 try wavData.write(to: fileURL)
-                print("✅ Som criado e salvo em cache: \(fileName)")
+                print("✅ Sound created and saved to cache: \(fileName)")
             } catch {
-                print("Erro ao salvar som no cache: \(error)")
+                print("Error saving sound to cache: \(error)")
                 return nil
             }
         } else {
-            print("♻️ Som carregado do cache: \(fileName)")
+            print("♻️ Sound loaded from cache: \(fileName)")
         }
 
-        // Carrega o player do arquivo em cache
+        // Load player from cached file
         do {
             let player = try AVAudioPlayer(contentsOf: fileURL)
             player.volume = 1.0
@@ -138,7 +138,7 @@ class MetronomeEngine: ObservableObject {
             player.prepareToPlay()
             return player
         } catch {
-            print("Erro ao criar audio player: \(error)")
+            print("Error creating audio player: \(error)")
             return nil
         }
     }
@@ -204,13 +204,13 @@ class MetronomeEngine: ObservableObject {
 
     // MARK: - Time Signature Control
     func setTimeSignature(_ signature: TimeSignature) {
-        // Evita processamento desnecessário se for o mesmo compasso
+        // Avoid unnecessary processing if it's the same signature
         guard signature != timeSignature else { return }
 
         timeSignature = signature
         currentBeat = 0
 
-        // Apenas reagenda se estiver tocando
+        // Only reschedule if playing
         if isPlaying {
             DispatchQueue.main.async { [weak self] in
                 self?.rescheduleTimer()
@@ -219,19 +219,19 @@ class MetronomeEngine: ObservableObject {
     }
 
     // MARK: - Cache Management
-    /// Limpa os arquivos de áudio do cache (útil para debug ou se quiser regenerar os sons)
+    /// Clears audio files from cache (useful for debug or to regenerate sounds)
     func clearAudioCache() {
         guard let cacheDir = getCacheDirectory() else { return }
 
         do {
             try FileManager.default.removeItem(at: cacheDir)
-            print("🗑️ Cache de áudio limpo")
+            print("🗑️ Audio cache cleared")
         } catch {
-            print("Erro ao limpar cache: \(error)")
+            print("Error clearing cache: \(error)")
         }
     }
 
-    /// Retorna o tamanho do cache em bytes
+    /// Returns cache size in bytes
     func getCacheSize() -> Int64 {
         guard let cacheDir = getCacheDirectory() else { return 0 }
 
@@ -284,22 +284,22 @@ class MetronomeEngine: ObservableObject {
 
     // MARK: - Audio Playback
     private func playClick() {
-        // Determina se é o primeiro tempo (acentuado) ou não
+        // Determine if it's the first beat (accented) or not
         let isAccent = currentBeat == 0
         let player = isAccent ? audioPlayerAccent : audioPlayerNormal
 
         guard let player = player else {
-            print("Audio player não está disponível")
+            print("Audio player is not available")
             return
         }
 
         player.currentTime = 0
         let success = player.play()
         if !success {
-            print("Falha ao tocar o som")
+            print("Failed to play sound")
         }
 
-        // Avança para o próximo tempo
+        // Advance to next beat
         currentBeat = (currentBeat + 1) % timeSignature.beats
     }
 }

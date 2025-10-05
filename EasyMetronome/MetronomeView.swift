@@ -93,7 +93,7 @@ private extension MetronomeView {
             )
         }
         .buttonStyle(.plain)
-        .confirmationDialog("Selecione o Compasso", isPresented: $showTimeSignaturePicker, titleVisibility: .visible) {
+        .confirmationDialog("Select Time Signature", isPresented: $showTimeSignaturePicker, titleVisibility: .visible) {
             ForEach(TimeSignature.allSignatures) { signature in
                 Button(signature.description + " - " + signature.name) {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -101,7 +101,7 @@ private extension MetronomeView {
                     }
                 }
             }
-            Button("Cancelar", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         }
     }
 

@@ -9,9 +9,9 @@ import SwiftUI
 
 // MARK: - Theme System
 enum AppTheme: String, CaseIterable {
-    case rose = "Rosa"
-    case light = "Claro"
-    case dark = "Escuro"
+    case rose = "Rose"
+    case light = "Light"
+    case dark = "Dark"
 
     var colors: ThemeColors {
         switch self {

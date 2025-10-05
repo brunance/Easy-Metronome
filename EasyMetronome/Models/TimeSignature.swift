@@ -18,13 +18,13 @@ struct TimeSignature: Identifiable, Equatable {
         "\(beats)/\(noteValue)"
     }
 
-    // Compassos comuns
-    static let common = TimeSignature(beats: 4, noteValue: 4, name: "Comum")
-    static let waltz = TimeSignature(beats: 3, noteValue: 4, name: "Valsa")
-    static let march = TimeSignature(beats: 2, noteValue: 4, name: "Marcha")
-    static let compound = TimeSignature(beats: 6, noteValue: 8, name: "Composto")
-    static let fiveFour = TimeSignature(beats: 5, noteValue: 4, name: "Cinco por Quatro")
-    static let sevenEight = TimeSignature(beats: 7, noteValue: 8, name: "Sete por Oito")
+    // Common time signatures
+    static let common = TimeSignature(beats: 4, noteValue: 4, name: "Common")
+    static let waltz = TimeSignature(beats: 3, noteValue: 4, name: "Waltz")
+    static let march = TimeSignature(beats: 2, noteValue: 4, name: "March")
+    static let compound = TimeSignature(beats: 6, noteValue: 8, name: "Compound")
+    static let fiveFour = TimeSignature(beats: 5, noteValue: 4, name: "Five Four")
+    static let sevenEight = TimeSignature(beats: 7, noteValue: 8, name: "Seven Eight")
 
     static let allSignatures: [TimeSignature] = [
         .common,
