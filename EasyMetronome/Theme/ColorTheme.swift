@@ -12,7 +12,7 @@ enum AppTheme: String, CaseIterable {
     case rose = "Rosa"
     case light = "Claro"
     case dark = "Escuro"
-    
+
     var colors: ThemeColors {
         switch self {
         case .rose:

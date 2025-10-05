@@ -14,19 +14,19 @@ struct MetronomeView: View {
     @State private var beatFlash = false
     @State private var animationTimer: Timer?
     @State private var currentTheme: AppTheme = .light
-    
+
     private var theme: ThemeColors {
         currentTheme.colors
     }
-    
+
     var body: some View {
         ZStack {
             theme.background
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 40) {
                 Spacer()
-                
+
                 titleView
                 timeSignatureSelector
                 bpmIndicator
@@ -34,10 +34,10 @@ struct MetronomeView: View {
                 primaryControls
                 secondaryControls
                 bpmRangeLabel
-                
+
                 Spacer()
             }
-            
+
             // Botão de tema no canto superior direito
             VStack {
                 HStack {
@@ -49,14 +49,14 @@ struct MetronomeView: View {
                 Spacer()
             }
         }
-        .onChange(of: metronome.isPlaying) { oldValue, newValue in
-            if newValue {
+        .onChange(of: metronome.isPlaying) {
+            if metronome.isPlaying {
                 startPulseAnimation()
             } else {
                 stopPulseAnimation()
             }
         }
-        .onChange(of: metronome.bpm) { oldValue, newValue in
+        .onChange(of: metronome.bpm) {
             if metronome.isPlaying {
                 restartPulseAnimation()
             }
@@ -72,7 +72,7 @@ private extension MetronomeView {
             .font(.system(size: 32, weight: .light, design: .rounded))
             .foregroundColor(theme.title)
     }
-    
+
     var timeSignatureSelector: some View {
         Menu {
             ForEach(TimeSignature.allSignatures) { signature in
@@ -103,7 +103,7 @@ private extension MetronomeView {
             )
         }
     }
-    
+
     var beatIndicator: some View {
         HStack(spacing: 8) {
             ForEach(0..<metronome.timeSignature.beats, id: \.self) { beat in
@@ -120,7 +120,7 @@ private extension MetronomeView {
         }
         .padding(.vertical, 8)
     }
-    
+
     var themeButton: some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.3)) {
@@ -141,37 +141,37 @@ private extension MetronomeView {
                 )
         }
     }
-    
+
     var bpmIndicator: some View {
         ZStack {
             // Círculo de fundo
             Circle()
                 .fill(theme.circleFill)
                 .frame(width: 280, height: 280)
-            
+
             // Círculo interno com animação de flash
             Circle()
                 .stroke(
-                    beatFlash && metronome.isPlaying 
+                    beatFlash && metronome.isPlaying
                         ? theme.circleStroke
                         : theme.circleStroke.opacity(0.3),
                     lineWidth: 2
                 )
                 .frame(width: 260, height: 260)
                 .animation(.easeOut(duration: 0.1), value: beatFlash)
-            
+
             VStack(spacing: 8) {
                 Text("\(metronome.bpm)")
                     .font(.system(size: 80, weight: .bold, design: .rounded))
                     .foregroundColor(theme.text)
-                
+
                 Text("BPM")
                     .font(.system(size: 24, weight: .light, design: .rounded))
                     .foregroundColor(theme.text.opacity(0.7))
             }
         }
     }
-    
+
     var primaryControls: some View {
         HStack(spacing: 40) {
             controlButton(
@@ -179,9 +179,9 @@ private extension MetronomeView {
                 action: { metronome.decreaseBPM() },
                 isDisabled: metronome.bpm <= metronome.minBPM
             )
-            
+
             playPauseButton
-            
+
             controlButton(
                 icon: "plus",
                 action: { metronome.increaseBPM() },
@@ -189,7 +189,7 @@ private extension MetronomeView {
             )
         }
     }
-    
+
     var secondaryControls: some View {
         HStack(spacing: 20) {
             smallControlButton(
@@ -197,7 +197,7 @@ private extension MetronomeView {
                 action: { metronome.decreaseBPM(by: 10) },
                 isDisabled: metronome.bpm <= metronome.minBPM
             )
-            
+
             smallControlButton(
                 label: "+10",
                 action: { metronome.increaseBPM(by: 10) },
@@ -205,13 +205,13 @@ private extension MetronomeView {
             )
         }
     }
-    
+
     var bpmRangeLabel: some View {
         Text("\(metronome.minBPM) - \(metronome.maxBPM) BPM")
             .font(.system(size: 14, weight: .regular, design: .rounded))
             .foregroundColor(theme.label.opacity(0.6))
     }
-    
+
     var playPauseButton: some View {
         Button(action: {
             metronome.togglePlayback()
@@ -223,7 +223,7 @@ private extension MetronomeView {
                 Circle()
                     .fill(theme.buttonFill)
                     .frame(width: 90, height: 90)
-                
+
                 Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 35, weight: .semibold))
                     .foregroundColor(theme.buttonIcon)
@@ -231,14 +231,14 @@ private extension MetronomeView {
             }
         }
     }
-    
+
     func controlButton(icon: String, action: @escaping () -> Void, isDisabled: Bool) -> some View {
         Button(action: action) {
             ZStack {
                 Circle()
                     .fill(theme.buttonFill)
                     .frame(width: 70, height: 70)
-                
+
                 Image(systemName: icon)
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundColor(theme.buttonIcon)
@@ -247,7 +247,7 @@ private extension MetronomeView {
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.4 : 1.0)
     }
-    
+
     func smallControlButton(label: String, action: @escaping () -> Void, isDisabled: Bool) -> some View {
         Button(action: action) {
             Text(label)
@@ -270,26 +270,26 @@ private extension MetronomeView {
         pulseAnimation.toggle()
         triggerBeatFlash()
     }
-    
+
     func triggerBeatFlash() {
         beatFlash = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             beatFlash = false
         }
     }
-    
+
     func startPulseAnimation() {
         let interval = 60.0 / Double(metronome.bpm)
         animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             triggerPulse()
         }
     }
-    
+
     func stopPulseAnimation() {
         animationTimer?.invalidate()
         animationTimer = nil
     }
-    
+
     func restartPulseAnimation() {
         stopPulseAnimation()
         startPulseAnimation()
